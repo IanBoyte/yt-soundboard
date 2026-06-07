@@ -1,0 +1,29 @@
+@import 'tailwindcss';
+
+@theme {
+	--color-music: oklch(0.65 0.18 235);
+	--color-music-deep: oklch(0.45 0.15 235);
+	--color-sfx: oklch(0.72 0.16 60);
+	--color-sfx-deep: oklch(0.52 0.14 60);
+}
+
+html,
+body,
+#svelte-root {
+	height: 100%;
+	overscroll-behavior: none;
+}
+
+@keyframes tile-pulse {
+	0%,
+	100% {
+		box-shadow: 0 0 0 0 currentColor;
+	}
+	50% {
+		box-shadow: 0 0 0 4px currentColor;
+	}
+}
+
+.tile-playing {
+	animation: tile-pulse 1.6s ease-in-out infinite;
+}

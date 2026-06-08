@@ -94,6 +94,18 @@ export async function reorderSections(ids: string[]): Promise<void> {
 	);
 }
 
+/** Move a section one slot earlier (dir -1) or later (dir +1). No-op at the ends. */
+export async function moveSection(id: string, dir: -1 | 1): Promise<void> {
+	const current = get(board);
+	if (!current) return;
+	const ids = current.sections.map((s) => s.id);
+	const idx = ids.indexOf(id);
+	const target = idx + dir;
+	if (idx < 0 || target < 0 || target >= ids.length) return;
+	[ids[idx], ids[target]] = [ids[target], ids[idx]];
+	await reorderSections(ids);
+}
+
 export async function addTile(
 	section_id: string,
 	lane: Lane,

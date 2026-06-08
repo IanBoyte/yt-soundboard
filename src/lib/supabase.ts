@@ -1,19 +1,20 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { env } from '$env/dynamic/public';
 import type { Board, BoardWithContent, Section, Tile } from './types';
 
-const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string | undefined;
-const SUPABASE_ANON_KEY = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string | undefined;
+const SUPABASE_URL = env.PUBLIC_SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY = env.PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 let _client: SupabaseClient | null = null;
 
 export function supabase(): SupabaseClient {
 	if (!_client) {
-		if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+		if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
 			throw new Error(
-				'Missing PUBLIC_SUPABASE_URL or PUBLIC_SUPABASE_ANON_KEY. Copy .env.example to .env and fill in your Supabase project values.'
+				'Missing PUBLIC_SUPABASE_URL or PUBLIC_SUPABASE_PUBLISHABLE_KEY. Copy .env.example to .env and fill in your Supabase project values.'
 			);
 		}
-		_client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+		_client = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 			auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 		});
 	}

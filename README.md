@@ -23,12 +23,12 @@ npm run dev
 ### Create your Supabase project
 
 1. Sign up at <https://supabase.com> (free tier).
-2. Create a new project. Note the **Project URL** and **anon public key** (Settings → API).
+2. Create a new project. Note the **Project URL** and the **Publishable key** (Project → Connect → API Keys, or Settings → API Keys → "Publishable key", format `sb_publishable_…`). This is the modern replacement for the legacy `anon` key — same low privileges, RLS behaves identically, but instantly rotatable. Legacy anon keys are deprecated by end of 2026, so start on the publishable key.
 3. Paste them into `.env`:
 
 	```
 	PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-	PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
+	PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 	```
 
 4. Run the schema migration once: open the Supabase dashboard → **SQL Editor** → paste the contents of `supabase/migrations/0001_init.sql` → Run.
@@ -63,7 +63,7 @@ npm run build
 
 Two options:
 
-1. **Connect to GitHub.** Push the repo, then in Cloudflare Pages: Create a Project → Connect Git → pick the repo. Build settings: `npm run build`, output dir `build`. Add the two `PUBLIC_SUPABASE_*` env vars in Settings → Environment variables.
+1. **Connect to GitHub.** Push the repo, then in Cloudflare Pages: Create a Project → Connect Git → pick the repo. Build settings: `npm run build`, output dir `build`. Add the two env vars (`PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_PUBLISHABLE_KEY`) in Settings → Environment variables.
 
 2. **Manual deploy.** `npx wrangler pages deploy build --project-name=ttrpg-soundboard`
 

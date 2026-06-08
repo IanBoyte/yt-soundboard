@@ -3,7 +3,19 @@ import tailwindcss from '@tailwindcss/vite';
 import { SvelteKitPWA } from '@vite-pwa/sveltekit';
 import { defineConfig } from 'vite';
 
-export default defineConfig({
+export default defineConfig(() => {
+	const tsHost = process.env.TS_HOST; // e.g. cid.tail229344.ts.net — set by `npm run dev:ts`
+
+	return {
+	server: tsHost
+		? {
+				// Bind IPv4 loopback so `tailscale serve` (which dials 127.0.0.1) can reach us;
+				// Vite defaults to IPv6 [::1] only, which makes Serve return 502.
+				host: '127.0.0.1',
+				allowedHosts: [tsHost],
+				hmr: { host: tsHost, clientPort: 443, protocol: 'wss' as const }
+			}
+		: undefined,
 	plugins: [
 		tailwindcss(),
 		sveltekit(),
@@ -28,4 +40,5 @@ export default defineConfig({
 			}
 		})
 	]
+	};
 });

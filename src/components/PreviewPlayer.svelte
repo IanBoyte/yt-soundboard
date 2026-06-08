@@ -8,13 +8,15 @@
 		startSeconds,
 		endSeconds,
 		onSetStart,
-		onSetEnd
+		onSetEnd,
+		onDuration
 	}: {
 		youtubeId: string | null;
 		startSeconds: number;
 		endSeconds: number;
 		onSetStart: (s: number) => void;
 		onSetEnd: (s: number) => void;
+		onDuration?: (seconds: number) => void;
 	} = $props();
 
 	let container: HTMLDivElement;
@@ -23,10 +25,12 @@
 	let currentTime = $state(0);
 	let previewing = $state(false);
 	let pollHandle: ReturnType<typeof setInterval> | null = null;
+	let reportedDuration = 0;
 
 	$effect(() => {
 		// (re)load the video when youtubeId changes
 		if (player && ready && youtubeId) {
+			reportedDuration = 0;
 			try {
 				player.cueVideoById({ videoId: youtubeId, startSeconds });
 			} catch {
@@ -60,6 +64,11 @@
 			if (!player) return;
 			try {
 				currentTime = player.getCurrentTime();
+				const dur = player.getDuration();
+				if (dur > 0 && dur !== reportedDuration) {
+					reportedDuration = dur;
+					onDuration?.(dur);
+				}
 				if (previewing && currentTime >= endSeconds) {
 					player.pauseVideo();
 					previewing = false;
@@ -101,7 +110,7 @@
 	<div bind:this={container} class="aspect-video w-full overflow-hidden rounded-lg bg-black"></div>
 
 	<div class="flex flex-wrap gap-2 text-xs">
-		<span class="rounded bg-slate-700/60 px-2 py-1 font-mono">
+		<span class="rounded bg-slate-200 px-2 py-1 font-mono text-slate-700 dark:bg-slate-700/60 dark:text-slate-200">
 			Playhead: {currentTime.toFixed(1)}s
 		</span>
 		<button

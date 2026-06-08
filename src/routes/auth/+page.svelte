@@ -29,28 +29,34 @@
 </script>
 
 <main class="flex min-h-screen items-center justify-center p-6">
-	<div class="w-full max-w-sm rounded-2xl border border-slate-800 bg-slate-900/60 p-6 shadow-xl">
+	<div
+		class="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900/60"
+	>
 		<h1 class="mb-1 text-xl font-semibold">TTRPG Soundboard</h1>
-		<p class="mb-6 text-sm text-slate-400">Sign in with a magic link — no password.</p>
+		<p class="mb-6 text-sm text-slate-500 dark:text-slate-400">
+			Sign in with a magic link — no password.
+		</p>
 
 		{#if sent}
-			<p class="rounded-lg bg-emerald-900/40 px-3 py-2 text-sm text-emerald-200">
+			<p
+				class="rounded-lg bg-emerald-100 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200"
+			>
 				Magic link sent. Check your email and tap the link to sign in.
 			</p>
 		{:else}
 			<form onsubmit={submit} class="space-y-3">
 				<label class="block">
-					<span class="mb-1 block text-sm font-medium text-slate-300">Email</span>
+					<span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Email</span>
 					<input
 						type="email"
 						required
 						bind:value={email}
 						placeholder="you@example.com"
-						class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm"
+						class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800"
 					/>
 				</label>
 				{#if error}
-					<p class="text-sm text-rose-300">{error}</p>
+					<p class="text-sm text-rose-600 dark:text-rose-300">{error}</p>
 				{/if}
 				<button
 					type="submit"

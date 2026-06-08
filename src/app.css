@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* Class-based dark mode: `dark:` utilities respond to a `.dark` class on <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
 	--color-music: oklch(0.65 0.18 235);
 	--color-music-deep: oklch(0.45 0.15 235);

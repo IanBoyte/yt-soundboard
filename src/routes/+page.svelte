@@ -2,12 +2,21 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { getSession, signOut } from '$lib/supabase';
-	import { board, loading, loadError, refresh, masterVolume, setMasterVolume } from '$lib/stores/board';
+	import {
+		board,
+		loading,
+		loadError,
+		refresh,
+		masterVolume,
+		setMasterVolume,
+		addSection
+	} from '$lib/stores/board';
 	import { editMode, editSheet, currentSectionIndex } from '$lib/stores/ui';
 	import { audioPool } from '$lib/audio/pool';
 	import Section from '$components/Section.svelte';
 	import SectionTabs from '$components/SectionTabs.svelte';
 	import EditSheet from '$components/EditSheet.svelte';
+	import OptionsMenu from '$components/OptionsMenu.svelte';
 
 	let viewport = $state<'mobile' | 'desktop'>('mobile');
 
@@ -21,12 +30,20 @@
 		mq.addEventListener('change', onChange);
 
 		(async () => {
-			const session = await getSession();
-			if (!session) {
-				goto('/auth');
-				return;
+			try {
+				const session = await getSession();
+				if (!session) {
+					goto('/auth');
+					return;
+				}
+				await refresh();
+			} catch (err) {
+				// Surface config/auth failures instead of hanging on "Loading board…".
+				loading.set(false);
+				loadError.set(
+					err instanceof Error ? err.message : String(err)
+				);
 			}
-			await refresh();
 		})();
 
 		return () => mq.removeEventListener('change', onChange);
@@ -36,6 +53,14 @@
 		currentSectionIndex.set(i);
 	}
 
+	async function addSectionPrompt() {
+		const name = prompt('Section name?');
+		if (!name?.trim()) return;
+		await addSection(name.trim());
+		const b = $board;
+		if (b) currentSectionIndex.set(b.sections.length - 1);
+	}
+
 	async function logout() {
 		audioPool.stopAll();
 		await signOut();
@@ -43,15 +68,15 @@
 	}
 </script>
 
-<div class="flex h-full flex-col">
+<div class="flex h-full flex-col overflow-x-clip">
 	<header
-		class="sticky top-0 z-30 flex items-center gap-2 border-b border-slate-800 bg-slate-900/90 px-3 py-2 backdrop-blur"
+		class="sticky top-0 z-30 flex items-center gap-2 border-b border-slate-200 bg-white/90 px-3 py-2 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90"
 	>
 		<button
 			type="button"
 			onclick={() => audioPool.stopAll()}
 			disabled={playingCount === 0}
-			class="rounded-lg bg-rose-600 px-3 py-2 text-sm font-bold text-white shadow disabled:bg-slate-700 disabled:text-slate-500"
+			class="rounded-lg bg-rose-600 px-3 py-2 text-sm font-bold text-white shadow disabled:bg-slate-300 disabled:text-slate-500 dark:disabled:bg-slate-700"
 			aria-label="Stop all"
 		>
 			Stop All
@@ -60,18 +85,20 @@
 			{/if}
 		</button>
 
-		<label class="flex grow items-center gap-2">
-			<span class="text-xs uppercase tracking-wider text-slate-500">Vol</span>
+		<label class="flex min-w-0 grow items-center gap-2">
+			<span class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-500">Vol</span>
 			<input
 				type="range"
 				min="0"
 				max="100"
 				value={$masterVolume}
 				oninput={(e) => setMasterVolume(parseInt((e.target as HTMLInputElement).value))}
-				class="grow accent-emerald-500"
+				class="min-w-0 grow accent-emerald-500"
 				aria-label="Master volume"
 			/>
-			<span class="w-9 text-right font-mono text-xs text-slate-400">{$masterVolume}%</span>
+			<span class="w-9 text-right font-mono text-xs text-slate-500 dark:text-slate-400"
+				>{$masterVolume}%</span
+			>
 		</label>
 
 		<button
@@ -79,59 +106,60 @@
 			onclick={() => editMode.update((v) => !v)}
 			class="rounded-lg px-3 py-2 text-sm font-medium {$editMode
 				? 'bg-emerald-600 text-white'
-				: 'bg-slate-800 text-slate-200 hover:bg-slate-700'}"
+				: 'bg-slate-200 text-slate-700 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700'}"
 			aria-pressed={$editMode}
 		>
 			{$editMode ? 'Done' : 'Edit'}
 		</button>
 
-		<button
-			type="button"
-			onclick={logout}
-			class="rounded-lg px-2 py-2 text-xs text-slate-500 hover:bg-slate-800 hover:text-slate-300"
-			title="Sign out"
-		>
-			↪
-		</button>
+		<OptionsMenu onLogout={logout} />
 	</header>
 
 	{#if $loading}
-		<div class="flex grow items-center justify-center text-sm text-slate-400">Loading board…</div>
+		<div class="flex grow items-center justify-center text-sm text-slate-500 dark:text-slate-400">
+			Loading board…
+		</div>
 	{:else if $loadError}
-		<div class="m-4 rounded-lg bg-rose-900/40 px-4 py-3 text-sm text-rose-200">
+		<div
+			class="m-4 rounded-lg bg-rose-100 px-4 py-3 text-sm text-rose-700 dark:bg-rose-900/40 dark:text-rose-200"
+		>
 			{$loadError}
 		</div>
 	{:else if $board}
 		{@const b = $board}
 		{#if b.sections.length === 0}
-			<div class="m-4 rounded-lg border-2 border-dashed border-slate-700 p-8 text-center">
-				<p class="mb-3 text-slate-300">No sections yet.</p>
-				<p class="mb-3 text-sm text-slate-500">
-					Hit <span class="font-semibold">Edit</span> above, then add a section to get started.
+			<div
+				class="m-4 rounded-lg border-2 border-dashed border-slate-300 p-8 text-center dark:border-slate-700"
+			>
+				<p class="mb-3 text-slate-700 dark:text-slate-300">No sections yet.</p>
+				<p class="mb-4 text-sm text-slate-500">
+					Create a scene (Tavern, Combat, Forest…) to hold your music and SFX tiles.
 				</p>
+				<button
+					type="button"
+					onclick={addSectionPrompt}
+					class="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+				>
+					+ Add your first section
+				</button>
 			</div>
 		{:else if viewport === 'mobile'}
 			<SectionTabs sections={b.sections} currentIndex={$currentSectionIndex} onChange={setIndex} />
 			<main class="grow overflow-y-auto p-3">
 				{#if b.sections[$currentSectionIndex]}
-					<Section section={b.sections[$currentSectionIndex]} />
+					<Section section={b.sections[$currentSectionIndex]} variant="solo" />
 				{/if}
 			</main>
 		{:else}
 			<main class="grow space-y-8 overflow-y-auto p-6">
-				{#each b.sections as section (section.id)}
-					<Section {section} />
+				{#each b.sections as section, i (section.id)}
+					<Section {section} variant="row" index={i} total={b.sections.length} />
 				{/each}
 				{#if $editMode}
 					<div class="flex justify-center pt-2">
 						<button
 							type="button"
-							onclick={async () => {
-								const name = prompt('Section name?');
-								if (!name?.trim()) return;
-								const { addSection } = await import('$lib/stores/board');
-								await addSection(name.trim());
-							}}
+							onclick={addSectionPrompt}
 							class="rounded-lg border-2 border-dashed border-emerald-500/60 px-4 py-2 text-sm font-medium text-emerald-400 hover:bg-emerald-500/10"
 						>
 							+ Add Section

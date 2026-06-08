@@ -8,9 +8,17 @@
 	const playing = audioPool.playing;
 	let isPlaying = $derived($playing.has(tile.id));
 
-	const laneTint = $derived(tile.lane === 'music' ? 'bg-sky-700/40' : 'bg-amber-700/40');
-	const laneBorder = $derived(tile.lane === 'music' ? 'border-sky-500/60' : 'border-amber-500/60');
-	const playingColor = $derived(tile.lane === 'music' ? 'text-sky-400' : 'text-amber-400');
+	const laneTint = $derived(
+		tile.lane === 'music' ? 'bg-sky-100 dark:bg-sky-700/40' : 'bg-amber-100 dark:bg-amber-700/40'
+	);
+	const laneBorder = $derived(
+		tile.lane === 'music'
+			? 'border-sky-400 dark:border-sky-500/60'
+			: 'border-amber-400 dark:border-amber-500/60'
+	);
+	const playingColor = $derived(
+		tile.lane === 'music' ? 'text-sky-500 dark:text-sky-400' : 'text-amber-500 dark:text-amber-400'
+	);
 
 	function handleClick() {
 		if ($editMode) {
@@ -38,7 +46,9 @@
 	aria-label="{isPlaying ? 'Stop' : 'Play'} {tile.name}"
 >
 	<span class="text-3xl leading-none sm:text-4xl">{tile.emoji}</span>
-	<span class="line-clamp-2 text-xs font-medium text-slate-100/90 sm:text-sm">{tile.name}</span>
+	<span class="line-clamp-2 text-xs font-medium text-slate-700 dark:text-slate-100/90 sm:text-sm"
+		>{tile.name}</span
+	>
 	{#if $editMode}
 		<span
 			class="pointer-events-none absolute right-1 top-1 rounded-md bg-emerald-500/80 px-1.5 py-0.5 text-[10px] font-bold uppercase"

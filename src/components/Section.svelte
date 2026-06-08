@@ -1,12 +1,41 @@
 <script lang="ts">
 	import type { Section, Tile } from '$lib/types';
 	import TileButton from './Tile.svelte';
-	import { editMode, editSheet } from '$lib/stores/ui';
+	import { editMode, editSheet, collapsedSections, toggleCollapsed } from '$lib/stores/ui';
 	import { dndzone } from 'svelte-dnd-action';
-	import { reorderTilesInLane } from '$lib/stores/board';
+	import {
+		reorderTilesInLane,
+		moveSection,
+		renameSection,
+		deleteSection
+	} from '$lib/stores/board';
 	import { flip } from 'svelte/animate';
 
-	let { section }: { section: Section & { tiles: Tile[] } } = $props();
+	let {
+		section,
+		index = 0,
+		total = 1,
+		variant = 'row'
+	}: {
+		section: Section & { tiles: Tile[] };
+		index?: number;
+		total?: number;
+		/** 'row' = desktop stacked view (collapsible + full edit controls); 'solo' = mobile single-section view (tabs own nav/edit). */
+		variant?: 'row' | 'solo';
+	} = $props();
+
+	const collapsed = $derived(variant === 'row' && $collapsedSections.has(section.id));
+
+	async function handleRename() {
+		const name = prompt('Rename section', section.name);
+		if (!name?.trim() || name === section.name) return;
+		await renameSection(section.id, name.trim());
+	}
+
+	async function handleDelete() {
+		if (!confirm(`Delete section "${section.name}" and all its tiles?`)) return;
+		await deleteSection(section.id);
+	}
 
 	const music = $derived(
 		section.tiles.filter((t) => t.lane === 'music').sort((a, b) => a.position - b.position)
@@ -37,15 +66,70 @@
 </script>
 
 <section class="space-y-4">
-	<header class="flex items-baseline justify-between">
-		<h2 class="text-lg font-semibold text-slate-100">{section.name}</h2>
-		<span class="text-xs uppercase tracking-wider text-slate-500"
-			>{music.length} music · {sfx.length} sfx</span
-		>
+	<header class="flex items-center justify-between gap-2">
+		<div class="flex min-w-0 items-center gap-2">
+			{#if variant === 'row'}
+				<button
+					type="button"
+					onclick={() => toggleCollapsed(section.id)}
+					class="rounded p-1 text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800"
+					aria-label={collapsed ? 'Expand section' : 'Collapse section'}
+					aria-expanded={!collapsed}
+				>
+					<svg
+						viewBox="0 0 24 24"
+						class="h-5 w-5 transition-transform {collapsed ? '-rotate-90' : ''}"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<path d="M6 9l6 6 6-6" />
+					</svg>
+				</button>
+			{/if}
+			<h2 class="truncate text-lg font-semibold text-slate-900 dark:text-slate-100">
+				{section.name}
+			</h2>
+			<span class="shrink-0 text-xs uppercase tracking-wider text-slate-500"
+				>{music.length} music · {sfx.length} sfx</span
+			>
+		</div>
+
+		{#if variant === 'row' && $editMode}
+			<div class="flex shrink-0 items-center gap-1">
+				<button
+					type="button"
+					onclick={() => moveSection(section.id, -1)}
+					disabled={index === 0}
+					class="rounded p-1 text-slate-500 hover:bg-slate-200 disabled:opacity-30 dark:text-slate-400 dark:hover:bg-slate-800"
+					aria-label="Move section up">▲</button
+				>
+				<button
+					type="button"
+					onclick={() => moveSection(section.id, 1)}
+					disabled={index === total - 1}
+					class="rounded p-1 text-slate-500 hover:bg-slate-200 disabled:opacity-30 dark:text-slate-400 dark:hover:bg-slate-800"
+					aria-label="Move section down">▼</button
+				>
+				<button
+					type="button"
+					onclick={handleRename}
+					class="rounded p-1 text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800"
+					aria-label="Rename section">✎</button
+				>
+				<button
+					type="button"
+					onclick={handleDelete}
+					class="rounded p-1 text-rose-500 hover:bg-rose-500/20 dark:text-rose-400"
+					aria-label="Delete section">×</button
+				>
+			</div>
+		{/if}
 	</header>
 
+	{#if !collapsed}
 	<div>
-		<h3 class="mb-2 text-xs uppercase tracking-wider text-sky-400">Music</h3>
+		<h3 class="mb-2 text-xs uppercase tracking-wider text-sky-600 dark:text-sky-400">Music</h3>
 		<div
 			class="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
 			use:dndzone={{ ...dndOpts, items: music, type: `music-${section.id}` }}
@@ -71,7 +155,7 @@
 	</div>
 
 	<div>
-		<h3 class="mb-2 text-xs uppercase tracking-wider text-amber-400">SFX</h3>
+		<h3 class="mb-2 text-xs uppercase tracking-wider text-amber-600 dark:text-amber-400">SFX</h3>
 		<div
 			class="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-8"
 			use:dndzone={{ ...dndOpts, items: sfx, type: `sfx-${section.id}` }}
@@ -95,4 +179,5 @@
 			{/if}
 		</div>
 	</div>
+	{/if}
 </section>

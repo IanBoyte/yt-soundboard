@@ -26,13 +26,15 @@
 	let lane = $state<Lane>('music');
 	let sectionId = $state('');
 	let startStr = $state('0:00');
-	let endStr = $state('0:30');
+	let endStr = $state('');
 	let volume = $state(70);
 	let tintColor = $state<string | null>(null);
 	let youtubeId = $state<string | null>(null);
 	let saving = $state(false);
 	let error = $state<string | null>(null);
 	let metaLoading = $state(false);
+	let videoDuration = $state(0);
+	let endTouched = $state(false);
 
 	$effect(() => {
 		// initialise once on mount based on target / existing
@@ -45,6 +47,7 @@
 			sectionId = existing.section_id;
 			startStr = formatTime(existing.start_seconds);
 			endStr = formatTime(existing.end_seconds);
+			endTouched = true;
 			volume = existing.volume_pct;
 			tintColor = existing.tint_color;
 		} else if (target.mode === 'create') {
@@ -54,6 +57,12 @@
 		}
 	});
 
+	function onDurationKnown(seconds: number) {
+		videoDuration = seconds;
+		// Default the end to the full video length unless the user set it themselves.
+		if (!endTouched) endStr = formatTime(seconds);
+	}
+
 	async function onUrlChanged() {
 		error = null;
 		const id = parseYouTubeId(url);
@@ -61,7 +70,14 @@
 			youtubeId = null;
 			return;
 		}
+		const changed = id !== youtubeId;
 		youtubeId = id;
+		if (changed) {
+			// New video → re-default the end to its length once known.
+			videoDuration = 0;
+			endTouched = false;
+			endStr = '';
+		}
 		const start = parseStartSeconds(url);
 		if (start != null) startStr = formatTime(start);
 		if (!name) {
@@ -82,7 +98,8 @@
 	async function save() {
 		error = null;
 		const startSec = parseTime(startStr);
-		const endSec = parseTime(endStr);
+		// Blank end = play to the end of the video.
+		const endSec = endStr.trim() === '' ? videoDuration : parseTime(endStr);
 		if (!youtubeId) {
 			error = 'Paste a valid YouTube URL.';
 			return;
@@ -91,7 +108,15 @@
 			error = 'Give the tile a name.';
 			return;
 		}
-		if (isNaN(startSec) || isNaN(endSec) || endSec <= startSec) {
+		if (isNaN(startSec)) {
+			error = 'Start time is invalid.';
+			return;
+		}
+		if (endStr.trim() === '' && !(videoDuration > 0)) {
+			error = 'Still loading the video length — give it a second, then save.';
+			return;
+		}
+		if (isNaN(endSec) || endSec <= startSec) {
 			error = 'End time must be after start time.';
 			return;
 		}
@@ -151,7 +176,7 @@
 	aria-modal="true"
 >
 	<div
-		class="flex max-h-[95vh] w-full max-w-2xl flex-col overflow-y-auto rounded-t-2xl bg-slate-900 p-5 shadow-2xl sm:rounded-2xl"
+		class="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-y-auto overscroll-contain rounded-t-2xl bg-white px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] text-slate-900 shadow-2xl dark:bg-slate-900 dark:text-slate-100 sm:rounded-2xl sm:pb-5"
 	>
 		<div class="mb-4 flex items-center justify-between">
 			<h2 class="text-lg font-semibold">
@@ -160,21 +185,21 @@
 			<button
 				type="button"
 				onclick={close}
-				class="rounded p-1 text-slate-400 hover:bg-slate-800"
+				class="rounded p-1 text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800"
 				aria-label="Close">✕</button
 			>
 		</div>
 
 		<div class="space-y-4">
 			<label class="block">
-				<span class="mb-1 block text-sm font-medium text-slate-300">YouTube URL</span>
+				<span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">YouTube URL</span>
 				<input
 					type="url"
 					bind:value={url}
 					onblur={onUrlChanged}
 					onpaste={() => setTimeout(onUrlChanged, 0)}
 					placeholder="https://youtu.be/..."
-					class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm"
+					class="w-full rounded-lg border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-800 px-3 py-2 text-sm"
 				/>
 				{#if metaLoading}
 					<span class="text-xs text-slate-500">Fetching title…</span>
@@ -185,64 +210,72 @@
 				<PreviewPlayer
 					{youtubeId}
 					startSeconds={parseTime(startStr) || 0}
-					endSeconds={parseTime(endStr) || 0}
+					endSeconds={parseTime(endStr) || videoDuration || 0}
 					onSetStart={(s) => (startStr = formatTime(s))}
-					onSetEnd={(s) => (endStr = formatTime(s))}
+					onSetEnd={(s) => {
+						endTouched = true;
+						endStr = formatTime(s);
+					}}
+					onDuration={onDurationKnown}
 				/>
 			{/if}
 
 			<div class="flex gap-3">
 				<div class="grow space-y-1">
-					<span class="text-sm font-medium text-slate-300">Name</span>
+					<span class="text-sm font-medium text-slate-700 dark:text-slate-300">Name</span>
 					<input
 						type="text"
 						bind:value={name}
-						class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm"
+						class="w-full rounded-lg border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-800 px-3 py-2 text-sm"
 					/>
 				</div>
 				<div class="space-y-1">
-					<span class="text-sm font-medium text-slate-300">Emoji</span>
+					<span class="text-sm font-medium text-slate-700 dark:text-slate-300">Emoji</span>
 					<EmojiPicker value={emoji} onPick={(e) => (emoji = e)} />
 				</div>
 			</div>
 
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block">
-					<span class="mb-1 block text-sm font-medium text-slate-300">Start</span>
+					<span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Start</span>
 					<input
 						type="text"
 						bind:value={startStr}
 						placeholder="0:00"
-						class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 font-mono text-sm"
+						class="w-full rounded-lg border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-800 px-3 py-2 font-mono text-sm"
 					/>
 				</label>
 				<label class="block">
-					<span class="mb-1 block text-sm font-medium text-slate-300">End</span>
+					<span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+						End
+						<span class="font-normal text-slate-500">(blank = end of video)</span>
+					</span>
 					<input
 						type="text"
 						bind:value={endStr}
-						placeholder="0:30"
-						class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 font-mono text-sm"
+						oninput={() => (endTouched = true)}
+						placeholder={videoDuration > 0 ? formatTime(videoDuration) : 'end of video'}
+						class="w-full rounded-lg border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-800 px-3 py-2 font-mono text-sm"
 					/>
 				</label>
 			</div>
 
 			<div class="grid grid-cols-2 gap-3">
 				<label class="block">
-					<span class="mb-1 block text-sm font-medium text-slate-300">Lane</span>
+					<span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Lane</span>
 					<select
 						bind:value={lane}
-						class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm"
+						class="w-full rounded-lg border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-800 px-3 py-2 text-sm"
 					>
 						<option value="music">Music (loops)</option>
 						<option value="sfx">SFX (one-shot)</option>
 					</select>
 				</label>
 				<label class="block">
-					<span class="mb-1 block text-sm font-medium text-slate-300">Section</span>
+					<span class="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Section</span>
 					<select
 						bind:value={sectionId}
-						class="w-full rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-sm"
+						class="w-full rounded-lg border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-800 px-3 py-2 text-sm"
 					>
 						{#each $board?.sections ?? [] as s (s.id)}
 							<option value={s.id}>{s.name}</option>
@@ -252,7 +285,7 @@
 			</div>
 
 			<label class="block">
-				<span class="mb-1 flex justify-between text-sm font-medium text-slate-300">
+				<span class="mb-1 flex justify-between text-sm font-medium text-slate-700 dark:text-slate-300">
 					<span>Volume</span>
 					<span class="font-mono text-slate-400">{volume}%</span>
 				</span>
@@ -266,12 +299,12 @@
 			</label>
 
 			<div class="flex items-center gap-3">
-				<span class="text-sm font-medium text-slate-300">Tint</span>
+				<span class="text-sm font-medium text-slate-700 dark:text-slate-300">Tint</span>
 				<input
 					type="color"
 					value={tintColor ?? '#475569'}
 					oninput={(e) => (tintColor = (e.target as HTMLInputElement).value)}
-					class="h-9 w-12 rounded border border-slate-700 bg-slate-800"
+					class="h-9 w-12 rounded border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-800"
 				/>
 				{#if tintColor}
 					<button
@@ -283,7 +316,11 @@
 			</div>
 
 			{#if error}
-				<p class="rounded-lg bg-rose-900/40 px-3 py-2 text-sm text-rose-200">{error}</p>
+				<p
+					class="rounded-lg bg-rose-100 px-3 py-2 text-sm text-rose-700 dark:bg-rose-900/40 dark:text-rose-200"
+				>
+					{error}
+				</p>
 			{/if}
 
 			<div class="flex justify-between pt-2">
@@ -303,7 +340,7 @@
 					<button
 						type="button"
 						onclick={close}
-						class="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium hover:bg-slate-600"
+						class="rounded-lg bg-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-300 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600"
 					>
 						Cancel
 					</button>

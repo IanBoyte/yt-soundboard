@@ -1,78 +1,89 @@
 # TTRPG Soundboard
 
-A phone-first YouTube soundboard for TTRPG sessions. Looping music/ambience beds in one lane, one-shot SFX in another, organized into scene-based sections (Tavern, Combat, Forest, Boss…). Build the board on your laptop; play from your phone at the table. Syncs across devices via Supabase.
+A phone-first soundboard for TTRPG sessions. Looping music/ambience beds in one lane, one-shot SFX in another, organized into scene-based sections (Tavern, Combat, Forest, Boss…). Build the board on your laptop, extract the clips once, and play from your phone at the table — fully offline.
+
+Audio is **pre-extracted** from YouTube into small Opus clips and played through the **Web Audio API**. There are no YouTube iframes at runtime, so playback is instant, gapless, and light enough for a low-end Android player. The board is **local-first** (IndexedDB) — no login, no server — and shareable via config files or links.
 
 ## Stack
 
 - **SvelteKit** (static export — no server functions)
 - **Tailwind v4** for styling
-- **Supabase** for auth + sync (free tier is plenty)
-- **YouTube IFrame Player API** for playback (no API key needed)
+- **Web Audio API** for playback (pre-extracted Opus clips, gapless native looping)
+- **IndexedDB** for the board; **Cache Storage** for offline clips
 - **PWA** installable on phone home screen
-- **Cloudflare Pages** for hosting
+- **Cloudflare Pages** (or any static host) for hosting
 
 ## Local setup
 
 ```sh
 npm install
-cp .env.example .env
-# Edit .env with your Supabase project URL + anon key (see below)
 npm run dev
 ```
 
-### Create your Supabase project
+That's it — no environment variables, no account. The app opens to an empty board you can start filling.
 
-1. Sign up at <https://supabase.com> (free tier).
-2. Create a new project. Note the **Project URL** and the **Publishable key** (Project → Connect → API Keys, or Settings → API Keys → "Publishable key", format `sb_publishable_…`). This is the modern replacement for the legacy `anon` key — same low privileges, RLS behaves identically, but instantly rotatable. Legacy anon keys are deprecated by end of 2026, so start on the publishable key.
-3. Paste them into `.env`:
+## Building your board
 
-	```
-	PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-	PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
-	```
+1. **Edit mode (pencil icon, top-right):** add/rename/delete sections; add tiles; reorder by drag; tweak per-tile name, emoji, tint, lane, volume, and start/end timestamps.
+2. **Add a tile:** paste a YouTube URL → the title auto-fetches; `?t=34s` pre-fills the start. The embedded preview player lets you scrub and tap **Set start = playhead** / **Set end = playhead** for accurate trim points. (Preview is the only place a YouTube iframe is still used.)
+3. New tiles show a ⏳ badge until their audio has been extracted (next step).
 
-4. Run the schema migration once: open the Supabase dashboard → **SQL Editor** → paste the contents of `supabase/migrations/0001_init.sql` → Run.
-5. Make sure email magic links are enabled: Authentication → Providers → Email → "Enable Email provider" + "Enable Magic Link". Add your local URL (`http://localhost:5173`) and your production URL to **Site URL** / **Redirect URLs** under Authentication → URL Configuration.
+## Extracting clips (one-time per new/changed tile)
 
-### Sign in
+Playback uses local audio files, not live YouTube. Generate them with the bundled tool on your computer.
 
-Open `http://localhost:5173`, enter your email, tap the magic link in your inbox. You're in.
+**Requirements:** [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) and `ffmpeg` on your PATH.
 
-## Using the soundboard
+```sh
+# 1. In the app: Options (gear) → Export config  → saves soundboard-config.json
+# 2. Move that file to the project root, then:
+node scripts/extract-clips.mjs            # reads ./soundboard-config.json
+#    (or: node scripts/extract-clips.mjs path/to/soundboard-config.json)
+```
 
-- **Edit mode (pencil icon, top-right):** Add/rename/delete sections; add tiles; reorder by drag; tweak per-tile name, emoji, tint color, lane, volume, start/end timestamps.
-- **Add a tile:** Paste a YouTube URL → title auto-fetches; if the URL has `?t=34s` it pre-fills the start. The embedded preview player lets you scrub and tap **Set start = playhead** / **Set end = playhead** for accurate trim points.
-- **Play mode (default):** Tap a tile to play, tap again to stop. Music tiles loop between start↔end with a 0.5s fade. SFX tiles fire once and stop hard. Multiple tiles can play simultaneously.
-- **Stop All:** Big red button in the header. Halts every playing clip.
-- **Master volume:** Slider in the header. Scales per-tile volumes.
+This downloads + trims each tile to `static/clips/<key>.opus` (skipping ones already done) and writes `static/clips/index.json`. Reload the app and the ⏳ badges clear.
+
+> Extracting YouTube audio may conflict with YouTube's Terms of Service. Intended for personal use with content you have the right to use.
+
+## Offline use at the table
+
+Open **Options → Save for offline** to warm the clip cache, then the board plays with no network at all (after the page itself has loaded once as a PWA). Music loops sample-accurately; SFX fire once.
+
+## Sharing a board
+
+- **Export / Import config:** Options → Export config writes `soundboard-config.json`; Import replaces your board from one. This file is also the input to the extraction tool.
+- **Copy share link:** Options → Copy share link puts the whole board (config only) into a `#cfg=…` URL on the clipboard. Opening it offers to import. Large boards fall back to a file export. A link shares the *config*, not the audio — the recipient gets sound only on a deployment that already hosts those clips, or after running the extraction tool themselves.
 
 ## Casting to room speakers
 
-There is no in-app Cast button. Use the OS instead:
+No in-app Cast button — use the OS:
 
-- **Android (preferred):** Open the soundboard in Chrome → use the system media-output picker (Android 10+) → route audio to your Chromecast / Nest / Google TV speaker.
-- **Chrome "Cast tab":** Browser menu → Cast → choose your TV/speaker.
-- **Bluetooth:** Pair the phone with any Bluetooth speaker — simplest of all.
+- **Android (preferred):** open in Chrome → system media-output picker → route to Chromecast / Nest / Google TV.
+- **Chrome "Cast tab":** browser menu → Cast.
+- **Bluetooth:** pair the phone with any speaker.
 
 ## Deploy to Cloudflare Pages
 
 ```sh
-npm run build
-# Output is in `build/` (static files only).
+npm run build      # static output in build/
 ```
 
-Two options:
+1. **Git:** push the repo, then Cloudflare Pages → Create Project → Connect Git → build `npm run build`, output dir `build`. No env vars needed. Commit `static/clips/` so the clips deploy with the site.
+2. **Manual:** `npx wrangler pages deploy build --project-name=ttrpg-soundboard`
 
-1. **Connect to GitHub.** Push the repo, then in Cloudflare Pages: Create a Project → Connect Git → pick the repo. Build settings: `npm run build`, output dir `build`. Add the two env vars (`PUBLIC_SUPABASE_URL`, `PUBLIC_SUPABASE_PUBLISHABLE_KEY`) in Settings → Environment variables.
+## Migrating from the old Supabase version
 
-2. **Manual deploy.** `npx wrangler pages deploy build --project-name=ttrpg-soundboard`
+If you have an existing cloud board, pull it down once into local config:
 
-After deploying, add your production URL to Supabase Auth → URL Configuration (Site URL + Redirect URLs).
+```sh
+SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/migrate-from-supabase.mjs
+node scripts/extract-clips.mjs
+```
 
-## Known v1 limitations
+Then delete `scripts/migrate-from-supabase.mjs` and the legacy `supabase/` folder.
 
-- **Loop seam gap:** YouTube's seek-on-end leaves a ~200–800ms gap when a music tile loops. Acceptable for ambience tracks; pick clips designed to loop or where ambient noise hides the seam.
-- **iOS PWA + screen lock:** iOS pauses web audio when the screen locks. Same constraint as Safari itself. Keep the screen on (or use Android, where the OS-level cast keeps audio rolling).
-- **Single board per user.** Multiple campaigns share one board. Use sections to separate them, or revisit when this hurts.
-- **No in-app Cast button.** See "Casting to room speakers" above.
-- **No realtime cross-device sync of *playing* state.** Each device controls its own playback; the *library* syncs, the live state doesn't.
+## Notes / limitations
+
+- **iOS PWA + screen lock:** iOS suspends web audio when the screen locks (a Safari constraint). Keep the screen on, or use Android.
+- **New tiles need a processing pass:** a tile added on the phone won't play until you run the extraction tool and redeploy/reload — the ⏳ badge marks these.
+- **Gapless loops:** Web Audio loops are sample-accurate; if a particular Opus clip shows a faint seam, re-trim its start/end to a cleaner boundary.

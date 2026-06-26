@@ -1,12 +1,27 @@
 <script lang="ts">
 	import { theme, toggleTheme } from '$lib/stores/theme';
 
-	let { onLogout }: { onLogout: () => void } = $props();
+	let {
+		onExport,
+		onImport,
+		onShare,
+		onPrimeOffline
+	}: {
+		onExport: () => void;
+		onImport: () => void;
+		onShare: () => void;
+		onPrimeOffline: () => void;
+	} = $props();
 
 	let open = $state(false);
 
 	function close() {
 		open = false;
+	}
+
+	function run(fn: () => void) {
+		close();
+		fn();
 	}
 </script>
 
@@ -79,16 +94,52 @@
 			<button
 				type="button"
 				role="menuitem"
-				onclick={() => {
-					close();
-					onLogout();
-				}}
-				class="flex w-full items-center gap-2 px-4 py-3 text-sm text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
+				onclick={() => run(onShare)}
+				class="flex w-full items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
 			>
 				<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
-					<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+					<circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" />
+					<path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" />
 				</svg>
-				Sign out
+				Copy share link
+			</button>
+
+			<button
+				type="button"
+				role="menuitem"
+				onclick={() => run(onPrimeOffline)}
+				class="flex w-full items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
+			>
+				<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+				</svg>
+				Save for offline
+			</button>
+
+			<div class="border-t border-slate-200 dark:border-slate-700"></div>
+
+			<button
+				type="button"
+				role="menuitem"
+				onclick={() => run(onExport)}
+				class="flex w-full items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
+			>
+				<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+				</svg>
+				Export config
+			</button>
+
+			<button
+				type="button"
+				role="menuitem"
+				onclick={() => run(onImport)}
+				class="flex w-full items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
+			>
+				<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+				</svg>
+				Import config
 			</button>
 		</div>
 	{/if}

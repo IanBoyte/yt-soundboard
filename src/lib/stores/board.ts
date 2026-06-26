@@ -1,14 +1,7 @@
 import { writable, derived, get } from 'svelte/store';
 import type { BoardWithContent, Section, Tile, Lane } from '../types';
-import {
-	loadBoard,
-	upsertSection,
-	deleteSection as sbDeleteSection,
-	upsertTile,
-	deleteTile as sbDeleteTile,
-	updateMasterVolume
-} from '../supabase';
-import { audioPool } from '../audio/pool';
+import { loadBoardDoc, saveBoardDoc } from '../storage/db';
+import { engine } from '../audio/engine';
 
 export const board = writable<BoardWithContent | null>(null);
 export const loading = writable(true);
@@ -16,13 +9,32 @@ export const loadError = writable<string | null>(null);
 
 export const masterVolume = derived(board, ($b) => $b?.master_volume_pct ?? 80);
 
+function emptyBoard(): BoardWithContent {
+	return {
+		id: crypto.randomUUID(),
+		name: 'My Soundboard',
+		master_volume_pct: 80,
+		sections: []
+	};
+}
+
+/** Persist the current in-memory board document to IndexedDB (fire-and-forget). */
+function persist(): void {
+	const current = get(board);
+	if (current) saveBoardDoc(current).catch((err) => console.error('persist board', err));
+}
+
 export async function refresh(): Promise<void> {
 	loading.set(true);
 	loadError.set(null);
 	try {
-		const b = await loadBoard();
-		board.set(b);
-		if (b) audioPool.setMasterVolume(b.master_volume_pct);
+		let doc = await loadBoardDoc();
+		if (!doc) {
+			doc = emptyBoard();
+			await saveBoardDoc(doc);
+		}
+		board.set(doc);
+		engine.setMasterVolume(doc.master_volume_pct);
 	} catch (err) {
 		loadError.set(err instanceof Error ? err.message : String(err));
 	} finally {
@@ -30,68 +42,68 @@ export async function refresh(): Promise<void> {
 	}
 }
 
-let masterDebounce: ReturnType<typeof setTimeout> | null = null;
+/** Replace the entire board (used by config import / share-link import). */
+export async function replaceBoard(next: BoardWithContent): Promise<void> {
+	engine.stopAll();
+	board.set(next);
+	engine.setMasterVolume(next.master_volume_pct);
+	await saveBoardDoc(next);
+}
+
 export function setMasterVolume(pct: number): void {
 	const clamped = Math.max(0, Math.min(100, Math.round(pct)));
-	audioPool.setMasterVolume(clamped);
+	engine.setMasterVolume(clamped);
 	board.update((b) => (b ? { ...b, master_volume_pct: clamped } : b));
-	if (masterDebounce) clearTimeout(masterDebounce);
-	const current = get(board);
-	if (!current) return;
-	const boardId = current.id;
-	masterDebounce = setTimeout(() => {
-		updateMasterVolume(boardId, clamped).catch((err) => console.error('persist master', err));
-	}, 400);
+	persist();
 }
 
 export async function addSection(name: string): Promise<Section | null> {
 	const current = get(board);
 	if (!current) return null;
-	const position = current.sections.length;
-	const section = await upsertSection({ board_id: current.id, name, position });
+	const section: Section = {
+		id: crypto.randomUUID(),
+		board_id: current.id,
+		name,
+		position: current.sections.length
+	};
 	board.update((b) => (b ? { ...b, sections: [...b.sections, { ...section, tiles: [] }] } : b));
+	persist();
 	return section;
 }
 
 export async function renameSection(id: string, name: string): Promise<void> {
-	const current = get(board);
-	if (!current) return;
-	const existing = current.sections.find((s) => s.id === id);
-	if (!existing) return;
-	await upsertSection({ id, board_id: current.id, name, position: existing.position });
 	board.update((b) =>
 		b ? { ...b, sections: b.sections.map((s) => (s.id === id ? { ...s, name } : s)) } : b
 	);
+	persist();
 }
 
 export async function deleteSection(id: string): Promise<void> {
-	await sbDeleteSection(id);
 	for (const tile of get(board)?.sections.find((s) => s.id === id)?.tiles ?? []) {
-		audioPool.stop(tile.id);
+		engine.stop(tile.id);
 	}
-	board.update((b) =>
-		b ? { ...b, sections: b.sections.filter((s) => s.id !== id) } : b
-	);
+	board.update((b) => (b ? { ...b, sections: b.sections.filter((s) => s.id !== id) } : b));
+	persist();
 }
 
 export async function reorderSections(ids: string[]): Promise<void> {
 	const current = get(board);
 	if (!current) return;
 	const map = new Map(current.sections.map((s) => [s.id, s]));
-	const ordered = ids.map((id, position) => ({ section: map.get(id)!, position }));
 	board.update((b) =>
 		b
 			? {
 					...b,
-					sections: ordered.map(({ section, position }) => ({ ...section, position }))
+					sections: ids
+						.map((id, position) => {
+							const s = map.get(id);
+							return s ? { ...s, position } : null;
+						})
+						.filter((s): s is Section & { tiles: Tile[] } => s !== null)
 				}
 			: b
 	);
-	await Promise.all(
-		ordered.map(({ section, position }) =>
-			upsertSection({ id: section.id, board_id: current.id, name: section.name, position })
-		)
-	);
+	persist();
 }
 
 /** Move a section one slot earlier (dir -1) or later (dir +1). No-op at the ends. */
@@ -116,8 +128,13 @@ export async function addTile(
 	const section = current.sections.find((s) => s.id === section_id);
 	if (!section) return null;
 	const laneTiles = section.tiles.filter((t) => t.lane === lane);
-	const payload = { ...tile, section_id, lane, position: laneTiles.length } as Omit<Tile, 'id'>;
-	const saved = await upsertTile(payload as any);
+	const saved: Tile = {
+		...tile,
+		id: crypto.randomUUID(),
+		section_id,
+		lane,
+		position: laneTiles.length
+	};
 	board.update((b) =>
 		b
 			? {
@@ -128,38 +145,27 @@ export async function addTile(
 				}
 			: b
 	);
+	persist();
 	return saved;
 }
 
 export async function updateTile(id: string, patch: Partial<Tile>): Promise<void> {
-	const current = get(board);
-	if (!current) return;
-	let updatedTile: Tile | null = null;
-	for (const s of current.sections) {
-		const existing = s.tiles.find((t) => t.id === id);
-		if (existing) {
-			updatedTile = { ...existing, ...patch };
-			break;
-		}
-	}
-	if (!updatedTile) return;
-	await upsertTile(updatedTile as any);
 	board.update((b) =>
 		b
 			? {
 					...b,
 					sections: b.sections.map((s) => ({
 						...s,
-						tiles: s.tiles.map((t) => (t.id === id ? (updatedTile as Tile) : t))
+						tiles: s.tiles.map((t) => (t.id === id ? { ...t, ...patch } : t))
 					}))
 				}
 			: b
 	);
+	persist();
 }
 
 export async function deleteTile(id: string): Promise<void> {
-	audioPool.stop(id);
-	await sbDeleteTile(id);
+	engine.stop(id);
 	board.update((b) =>
 		b
 			? {
@@ -171,6 +177,7 @@ export async function deleteTile(id: string): Promise<void> {
 				}
 			: b
 	);
+	persist();
 }
 
 export async function reorderTilesInLane(
@@ -195,5 +202,5 @@ export async function reorderTilesInLane(
 				}
 			: b
 	);
-	await Promise.all(reordered.map((t) => upsertTile(t as any)));
+	persist();
 }

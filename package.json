@@ -24,7 +24,6 @@
     "vite": "^6.0.0"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.0",
     "@vite-pwa/sveltekit": "^0.6.0",
     "emoji-picker-element": "^1.22.0",
     "svelte-dnd-action": "^0.9.50",

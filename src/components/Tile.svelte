@@ -1,12 +1,21 @@
 <script lang="ts">
 	import type { Tile } from '$lib/types';
-	import { audioPool } from '$lib/audio/pool';
+	import { engine } from '$lib/audio/engine';
+	import { isClipReady } from '$lib/audio/cache';
 	import { editMode, editSheet } from '$lib/stores/ui';
 
 	let { tile }: { tile: Tile } = $props();
 
-	const playing = audioPool.playing;
+	const playing = engine.playing;
 	let isPlaying = $derived($playing.has(tile.id));
+
+	let needsProcessing = $state(false);
+	$effect(() => {
+		const { youtube_id, start_seconds, end_seconds } = tile;
+		isClipReady({ youtube_id, start_seconds, end_seconds }).then((ready) => {
+			needsProcessing = !ready;
+		});
+	});
 
 	const laneTint = $derived(
 		tile.lane === 'music' ? 'bg-sky-100 dark:bg-sky-700/40' : 'bg-amber-100 dark:bg-amber-700/40'
@@ -26,9 +35,9 @@
 			return;
 		}
 		if (isPlaying) {
-			audioPool.stop(tile.id);
+			engine.stop(tile.id);
 		} else {
-			audioPool.play(tile).catch((err) => console.error('play failed', err));
+			engine.play(tile).catch((err) => console.error('play failed', err));
 		}
 	}
 </script>
@@ -53,6 +62,12 @@
 		<span
 			class="pointer-events-none absolute right-1 top-1 rounded-md bg-emerald-500/80 px-1.5 py-0.5 text-[10px] font-bold uppercase"
 			>Edit</span
+		>
+	{:else if needsProcessing}
+		<span
+			class="pointer-events-none absolute right-1 top-1 rounded-md bg-amber-500/90 px-1 py-0.5 text-[10px] font-bold leading-none text-white"
+			title="Audio not extracted yet — run the extraction tool"
+			aria-label="Audio not extracted yet">⏳</span
 		>
 	{/if}
 </button>

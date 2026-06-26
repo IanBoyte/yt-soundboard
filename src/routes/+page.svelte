@@ -1,26 +1,35 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
-	import { getSession, signOut } from '$lib/supabase';
 	import {
 		board,
 		loading,
 		loadError,
 		refresh,
+		replaceBoard,
 		masterVolume,
 		setMasterVolume,
 		addSection
 	} from '$lib/stores/board';
 	import { editMode, editSheet, currentSectionIndex } from '$lib/stores/ui';
-	import { audioPool } from '$lib/audio/pool';
+	import { engine } from '$lib/audio/engine';
+	import { primeOffline } from '$lib/audio/cache';
+	import {
+		exportConfigFile,
+		importConfigFile,
+		encodeShareLink,
+		readShareFragment,
+		clearShareFragment,
+		decodeSharePayload
+	} from '$lib/storage/config';
 	import Section from '$components/Section.svelte';
 	import SectionTabs from '$components/SectionTabs.svelte';
 	import EditSheet from '$components/EditSheet.svelte';
 	import OptionsMenu from '$components/OptionsMenu.svelte';
 
 	let viewport = $state<'mobile' | 'desktop'>('mobile');
+	let fileInput: HTMLInputElement;
 
-	const playing = audioPool.playing;
+	const playing = engine.playing;
 	let playingCount = $derived($playing.size);
 
 	onMount(() => {
@@ -31,23 +40,30 @@
 
 		(async () => {
 			try {
-				const session = await getSession();
-				if (!session) {
-					goto('/auth');
-					return;
-				}
 				await refresh();
+				await maybeImportShared();
 			} catch (err) {
-				// Surface config/auth failures instead of hanging on "Loading board…".
 				loading.set(false);
-				loadError.set(
-					err instanceof Error ? err.message : String(err)
-				);
+				loadError.set(err instanceof Error ? err.message : String(err));
 			}
 		})();
 
 		return () => mq.removeEventListener('change', onChange);
 	});
+
+	async function maybeImportShared() {
+		const payload = readShareFragment();
+		if (!payload) return;
+		if (confirm('Import the shared board? This replaces your current board.')) {
+			try {
+				await replaceBoard(await decodeSharePayload(payload));
+				currentSectionIndex.set(0);
+			} catch (err) {
+				alert('Could not read the shared link: ' + (err instanceof Error ? err.message : err));
+			}
+		}
+		clearShareFragment();
+	}
 
 	function setIndex(i: number) {
 		currentSectionIndex.set(i);
@@ -61,10 +77,51 @@
 		if (b) currentSectionIndex.set(b.sections.length - 1);
 	}
 
-	async function logout() {
-		audioPool.stopAll();
-		await signOut();
-		goto('/auth');
+	function exportConfig() {
+		if ($board) exportConfigFile($board);
+	}
+
+	function triggerImport() {
+		fileInput?.click();
+	}
+
+	async function onImportFile(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const file = input.files?.[0];
+		input.value = '';
+		if (!file) return;
+		if (!confirm('Import this config? It replaces your current board.')) return;
+		try {
+			await replaceBoard(await importConfigFile(file));
+			currentSectionIndex.set(0);
+		} catch (err) {
+			alert('Import failed: ' + (err instanceof Error ? err.message : err));
+		}
+	}
+
+	async function shareLink() {
+		if (!$board) return;
+		const url = await encodeShareLink($board);
+		// URLs over ~32k get unwieldy across apps/browsers; fall back to file export.
+		if (url.length > 32000) {
+			alert('This board is too large for a share link — exporting a config file instead.');
+			exportConfig();
+			return;
+		}
+		try {
+			await navigator.clipboard.writeText(url);
+			alert('Share link copied to clipboard.');
+		} catch {
+			prompt('Copy this share link:', url);
+		}
+	}
+
+	async function prime() {
+		if (!$board) return;
+		const tiles = $board.sections.flatMap((s) => s.tiles);
+		if (tiles.length === 0) return;
+		const r = await primeOffline(tiles);
+		alert(`Offline cache: ${r.cached}/${r.total} clips ready${r.failed ? `, ${r.failed} unavailable` : ''}.`);
 	}
 </script>
 
@@ -74,7 +131,7 @@
 	>
 		<button
 			type="button"
-			onclick={() => audioPool.stopAll()}
+			onclick={() => engine.stopAll()}
 			disabled={playingCount === 0}
 			class="rounded-lg bg-rose-600 px-3 py-2 text-sm font-bold text-white shadow disabled:bg-slate-300 disabled:text-slate-500 dark:disabled:bg-slate-700"
 			aria-label="Stop all"
@@ -112,8 +169,21 @@
 			{$editMode ? 'Done' : 'Edit'}
 		</button>
 
-		<OptionsMenu onLogout={logout} />
+		<OptionsMenu
+			onExport={exportConfig}
+			onImport={triggerImport}
+			onShare={shareLink}
+			onPrimeOffline={prime}
+		/>
 	</header>
+
+	<input
+		bind:this={fileInput}
+		type="file"
+		accept="application/json,.json"
+		class="hidden"
+		onchange={onImportFile}
+	/>
 
 	{#if $loading}
 		<div class="flex grow items-center justify-center text-sm text-slate-500 dark:text-slate-400">

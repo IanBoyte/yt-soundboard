@@ -1,0 +1,409 @@
+{
+  "version": 1,
+  "board": {
+    "id": "dolmenwood-example",
+    "name": "Dolmenwood — The Faerie Forest",
+    "master_volume_pct": 80,
+    "sections": [
+      {
+        "id": "sec-greenwood",
+        "board_id": "dolmenwood-example",
+        "name": "The Greenwood",
+        "position": 0,
+        "tiles": [
+          {
+            "id": "tile-greenwood-m1",
+            "section_id": "sec-greenwood",
+            "lane": "music",
+            "youtube_id": "-dDKzp_QA1o",
+            "start_seconds": 45,
+            "end_seconds": 225,
+            "name": "Forest Shrine",
+            "emoji": "🌳",
+            "tint_color": "#2e7d46",
+            "volume_pct": 60,
+            "position": 0
+          },
+          {
+            "id": "tile-greenwood-m2",
+            "section_id": "sec-greenwood",
+            "lane": "music",
+            "youtube_id": "aMezVX6pxE8",
+            "start_seconds": 30,
+            "end_seconds": 210,
+            "name": "Secret Glade",
+            "emoji": "🍄",
+            "tint_color": "#2e7d46",
+            "volume_pct": 60,
+            "position": 1
+          },
+          {
+            "id": "tile-greenwood-m3",
+            "section_id": "sec-greenwood",
+            "lane": "music",
+            "youtube_id": "Sd9tKu-8t_I",
+            "start_seconds": 30,
+            "end_seconds": 210,
+            "name": "Quiet Wood",
+            "emoji": "🌲",
+            "tint_color": "#2e7d46",
+            "volume_pct": 55,
+            "position": 2
+          },
+          {
+            "id": "tile-greenwood-m4",
+            "section_id": "sec-greenwood",
+            "lane": "music",
+            "youtube_id": "XxEhuSJF780",
+            "start_seconds": 45,
+            "end_seconds": 225,
+            "name": "Enchanted Path",
+            "emoji": "✨",
+            "tint_color": "#2e7d46",
+            "volume_pct": 60,
+            "position": 3
+          },
+          {
+            "id": "tile-greenwood-s1",
+            "section_id": "sec-greenwood",
+            "lane": "sfx",
+            "youtube_id": "UUhXCgLA5Lw",
+            "start_seconds": 0,
+            "end_seconds": 4,
+            "name": "Owl Hoot",
+            "emoji": "🦉",
+            "tint_color": "#2e7d46",
+            "volume_pct": 85,
+            "position": 0
+          },
+          {
+            "id": "tile-greenwood-s2",
+            "section_id": "sec-greenwood",
+            "lane": "sfx",
+            "youtube_id": "u340GOeYvY8",
+            "start_seconds": 0,
+            "end_seconds": 6,
+            "name": "Wolf Howl",
+            "emoji": "🐺",
+            "tint_color": "#2e7d46",
+            "volume_pct": 85,
+            "position": 1
+          }
+        ]
+      },
+      {
+        "id": "sec-cold-prince",
+        "board_id": "dolmenwood-example",
+        "name": "Court of the Cold Prince",
+        "position": 1,
+        "tiles": [
+          {
+            "id": "tile-fae-m1",
+            "section_id": "sec-cold-prince",
+            "lane": "music",
+            "youtube_id": "syp6Lsd8HOo",
+            "start_seconds": 20,
+            "end_seconds": 200,
+            "name": "Fairy Lands",
+            "emoji": "🧚",
+            "tint_color": "#6d5ac4",
+            "volume_pct": 65,
+            "position": 0
+          },
+          {
+            "id": "tile-fae-m2",
+            "section_id": "sec-cold-prince",
+            "lane": "music",
+            "youtube_id": "OC23KpzsEdo",
+            "start_seconds": 20,
+            "end_seconds": 200,
+            "name": "The Fairy River",
+            "emoji": "💧",
+            "tint_color": "#6d5ac4",
+            "volume_pct": 60,
+            "position": 1
+          },
+          {
+            "id": "tile-fae-m3",
+            "section_id": "sec-cold-prince",
+            "lane": "music",
+            "youtube_id": "zifo0mHt9eM",
+            "start_seconds": 30,
+            "end_seconds": 210,
+            "name": "Fairies' Garden",
+            "emoji": "🦋",
+            "tint_color": "#6d5ac4",
+            "volume_pct": 60,
+            "position": 2
+          },
+          {
+            "id": "tile-fae-m4",
+            "section_id": "sec-cold-prince",
+            "lane": "music",
+            "youtube_id": "NNIMZg1EvLA",
+            "start_seconds": 15,
+            "end_seconds": 195,
+            "name": "Glamour & Reverie",
+            "emoji": "🌙",
+            "tint_color": "#6d5ac4",
+            "volume_pct": 65,
+            "position": 3
+          },
+          {
+            "id": "tile-fae-s1",
+            "section_id": "sec-cold-prince",
+            "lane": "sfx",
+            "youtube_id": "oox8nBKKP2U",
+            "start_seconds": 0,
+            "end_seconds": 3,
+            "name": "Glamour Spell",
+            "emoji": "✨",
+            "tint_color": "#6d5ac4",
+            "volume_pct": 85,
+            "position": 0
+          }
+        ]
+      },
+      {
+        "id": "sec-prigwort",
+        "board_id": "dolmenwood-example",
+        "name": "Prigwort Village",
+        "position": 2,
+        "tiles": [
+          {
+            "id": "tile-prig-m1",
+            "section_id": "sec-prigwort",
+            "lane": "music",
+            "youtube_id": "8LRUVrHsZLA",
+            "start_seconds": 15,
+            "end_seconds": 195,
+            "name": "Night at the Tavern",
+            "emoji": "🍺",
+            "tint_color": "#b5722f",
+            "volume_pct": 70,
+            "position": 0
+          },
+          {
+            "id": "tile-prig-m2",
+            "section_id": "sec-prigwort",
+            "lane": "music",
+            "youtube_id": "klyXNlRQPSE",
+            "start_seconds": 15,
+            "end_seconds": 195,
+            "name": "Burning Hearth Inn",
+            "emoji": "🔥",
+            "tint_color": "#b5722f",
+            "volume_pct": 68,
+            "position": 1
+          },
+          {
+            "id": "tile-prig-m3",
+            "section_id": "sec-prigwort",
+            "lane": "music",
+            "youtube_id": "pWqV3mWNcQM",
+            "start_seconds": 15,
+            "end_seconds": 195,
+            "name": "Red Dragon's Inn",
+            "emoji": "🐉",
+            "tint_color": "#b5722f",
+            "volume_pct": 68,
+            "position": 2
+          },
+          {
+            "id": "tile-prig-m4",
+            "section_id": "sec-prigwort",
+            "lane": "music",
+            "youtube_id": "wLlovxa3VJ0",
+            "start_seconds": 15,
+            "end_seconds": 195,
+            "name": "Bard's Repertoire",
+            "emoji": "🎻",
+            "tint_color": "#b5722f",
+            "volume_pct": 70,
+            "position": 3
+          }
+        ]
+      },
+      {
+        "id": "sec-witching-wood",
+        "board_id": "dolmenwood-example",
+        "name": "The Witching Wood",
+        "position": 3,
+        "tiles": [
+          {
+            "id": "tile-witch-m1",
+            "section_id": "sec-witching-wood",
+            "lane": "music",
+            "youtube_id": "lPNMXTtTz6Q",
+            "start_seconds": 45,
+            "end_seconds": 225,
+            "name": "Drune Ritual",
+            "emoji": "🕯️",
+            "tint_color": "#4b2e63",
+            "volume_pct": 60,
+            "position": 0
+          },
+          {
+            "id": "tile-witch-m2",
+            "section_id": "sec-witching-wood",
+            "lane": "music",
+            "youtube_id": "7tURXEUhwhg",
+            "start_seconds": 30,
+            "end_seconds": 210,
+            "name": "Witch of the Woods",
+            "emoji": "🧹",
+            "tint_color": "#4b2e63",
+            "volume_pct": 60,
+            "position": 1
+          },
+          {
+            "id": "tile-witch-m3",
+            "section_id": "sec-witching-wood",
+            "lane": "music",
+            "youtube_id": "yjLtWh5LWgY",
+            "start_seconds": 30,
+            "end_seconds": 210,
+            "name": "The Witch's Lair",
+            "emoji": "💀",
+            "tint_color": "#4b2e63",
+            "volume_pct": 58,
+            "position": 2
+          },
+          {
+            "id": "tile-witch-m4",
+            "section_id": "sec-witching-wood",
+            "lane": "music",
+            "youtube_id": "9DMvOFglC9A",
+            "start_seconds": 45,
+            "end_seconds": 225,
+            "name": "Haunted Graveyard",
+            "emoji": "🐦‍⬛",
+            "tint_color": "#4b2e63",
+            "volume_pct": 60,
+            "position": 3
+          }
+        ]
+      },
+      {
+        "id": "sec-goblin-warrens",
+        "board_id": "dolmenwood-example",
+        "name": "Goblin Warrens",
+        "position": 4,
+        "tiles": [
+          {
+            "id": "tile-gob-m1",
+            "section_id": "sec-goblin-warrens",
+            "lane": "music",
+            "youtube_id": "MoYy_Owd-G8",
+            "start_seconds": 45,
+            "end_seconds": 225,
+            "name": "The Goblins' Lair",
+            "emoji": "👺",
+            "tint_color": "#55663a",
+            "volume_pct": 62,
+            "position": 0
+          },
+          {
+            "id": "tile-gob-m2",
+            "section_id": "sec-goblin-warrens",
+            "lane": "music",
+            "youtube_id": "LAO0LoXDQLs",
+            "start_seconds": 45,
+            "end_seconds": 225,
+            "name": "Spooky Cave",
+            "emoji": "🦇",
+            "tint_color": "#55663a",
+            "volume_pct": 60,
+            "position": 1
+          },
+          {
+            "id": "tile-gob-m3",
+            "section_id": "sec-goblin-warrens",
+            "lane": "music",
+            "youtube_id": "edDGUVQ7-cE",
+            "start_seconds": 30,
+            "end_seconds": 210,
+            "name": "Goblin Cove",
+            "emoji": "🪨",
+            "tint_color": "#55663a",
+            "volume_pct": 60,
+            "position": 2
+          },
+          {
+            "id": "tile-gob-m4",
+            "section_id": "sec-goblin-warrens",
+            "lane": "music",
+            "youtube_id": "3radp0y5FFs",
+            "start_seconds": 45,
+            "end_seconds": 225,
+            "name": "Gloomy Depths",
+            "emoji": "🕸️",
+            "tint_color": "#55663a",
+            "volume_pct": 58,
+            "position": 3
+          }
+        ]
+      },
+      {
+        "id": "sec-peril",
+        "board_id": "dolmenwood-example",
+        "name": "Peril & Pursuit",
+        "position": 5,
+        "tiles": [
+          {
+            "id": "tile-battle-m1",
+            "section_id": "sec-peril",
+            "lane": "music",
+            "youtube_id": "3bRN__YwhXU",
+            "start_seconds": 10,
+            "end_seconds": 190,
+            "name": "Goblin Raid",
+            "emoji": "⚔️",
+            "tint_color": "#9c3327",
+            "volume_pct": 75,
+            "position": 0
+          },
+          {
+            "id": "tile-battle-m2",
+            "section_id": "sec-peril",
+            "lane": "music",
+            "youtube_id": "morqY2DkGuk",
+            "start_seconds": 10,
+            "end_seconds": 190,
+            "name": "Forest Ambush",
+            "emoji": "🏹",
+            "tint_color": "#9c3327",
+            "volume_pct": 75,
+            "position": 1
+          },
+          {
+            "id": "tile-battle-m3",
+            "section_id": "sec-peril",
+            "lane": "music",
+            "youtube_id": "_b6I2pvsv8Y",
+            "start_seconds": 10,
+            "end_seconds": 190,
+            "name": "Clash of Blades",
+            "emoji": "🔥",
+            "tint_color": "#9c3327",
+            "volume_pct": 75,
+            "position": 2
+          },
+          {
+            "id": "tile-battle-m4",
+            "section_id": "sec-peril",
+            "lane": "music",
+            "youtube_id": "hEQThgfXT30",
+            "start_seconds": 10,
+            "end_seconds": 190,
+            "name": "Last Stand",
+            "emoji": "🛡️",
+            "tint_color": "#9c3327",
+            "volume_pct": 75,
+            "position": 3
+          }
+        ]
+      }
+    ]
+  }
+}

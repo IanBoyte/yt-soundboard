@@ -4,13 +4,11 @@
 	let {
 		onExport,
 		onImport,
-		onShare,
-		onPrimeOffline
+		onShare
 	}: {
 		onExport: () => void;
 		onImport: () => void;
 		onShare: () => void;
-		onPrimeOffline: () => void;
 	} = $props();
 
 	let open = $state(false);
@@ -102,18 +100,6 @@
 					<path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" />
 				</svg>
 				Copy share link
-			</button>
-
-			<button
-				type="button"
-				role="menuitem"
-				onclick={() => run(onPrimeOffline)}
-				class="flex w-full items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
-			>
-				<svg viewBox="0 0 24 24" class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2">
-					<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
-				</svg>
-				Save for offline
 			</button>
 
 			<div class="border-t border-slate-200 dark:border-slate-700"></div>

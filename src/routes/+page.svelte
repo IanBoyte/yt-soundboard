@@ -11,8 +11,8 @@
 		addSection
 	} from '$lib/stores/board';
 	import { editMode, editSheet, currentSectionIndex } from '$lib/stores/ui';
+	import { toast } from '$lib/stores/toast';
 	import { engine } from '$lib/audio/engine';
-	import { primeOffline } from '$lib/audio/cache';
 	import {
 		exportConfigFile,
 		importConfigFile,
@@ -116,13 +116,6 @@
 		}
 	}
 
-	async function prime() {
-		if (!$board) return;
-		const tiles = $board.sections.flatMap((s) => s.tiles);
-		if (tiles.length === 0) return;
-		const r = await primeOffline(tiles);
-		alert(`Offline cache: ${r.cached}/${r.total} clips ready${r.failed ? `, ${r.failed} unavailable` : ''}.`);
-	}
 </script>
 
 <div class="flex h-full flex-col overflow-x-clip">
@@ -169,12 +162,7 @@
 			{$editMode ? 'Done' : 'Edit'}
 		</button>
 
-		<OptionsMenu
-			onExport={exportConfig}
-			onImport={triggerImport}
-			onShare={shareLink}
-			onPrimeOffline={prime}
-		/>
+		<OptionsMenu onExport={exportConfig} onImport={triggerImport} onShare={shareLink} />
 	</header>
 
 	<input
@@ -242,5 +230,19 @@
 
 	{#if $editSheet}
 		<EditSheet target={$editSheet} />
+	{/if}
+
+	{#if $toast}
+		<div
+			class="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4"
+			role="status"
+			aria-live="polite"
+		>
+			<div
+				class="pointer-events-auto max-w-md rounded-lg bg-slate-900 px-4 py-2.5 text-center text-sm text-white shadow-lg ring-1 ring-white/10 dark:bg-slate-700"
+			>
+				{$toast}
+			</div>
+		</div>
 	{/if}
 </div>
